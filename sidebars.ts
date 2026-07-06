@@ -1,0 +1,141 @@
+import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
+
+/**
+ * dx-common-go is a library of independent modules, so the sidebar is
+ * organized around modules rather than a single application architecture:
+ * orientation first (intro → getting started → design), then the module
+ * catalogue grouped by concern, then cross-cutting guides (examples,
+ * best practices, migration, API reference, operations).
+ *
+ * Every module page is self-contained: purpose, when to use it, key
+ * concepts, public API, configuration, examples, pitfalls — a reader
+ * should never need an unrelated page to use the module in front of them.
+ */
+const sidebars: SidebarsConfig = {
+  docsSidebar: [
+    'index',
+    'getting-started',
+    'design-principles',
+    'package-overview',
+    {
+      type: 'category',
+      label: 'Modules',
+      collapsed: false,
+      link: {type: 'doc', id: 'modules/index'},
+      items: [
+        {
+          type: 'category',
+          label: 'Service Foundation',
+          collapsed: true,
+          items: [
+            'modules/config',
+            'modules/httpserver',
+            'modules/openapi',
+            'modules/middleware',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'HTTP Contract',
+          collapsed: true,
+          items: [
+            'modules/dxerrors',
+            'modules/response-request',
+            'modules/validation',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Auth & Identity',
+          collapsed: true,
+          items: [
+            'modules/auth-identity',
+            'modules/auth-authorization',
+            'modules/auth-appid',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Persistence',
+          collapsed: true,
+          items: [
+            'modules/postgres',
+            'modules/elasticsearch',
+            'modules/redis-cache',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Messaging & Jobs',
+          collapsed: true,
+          items: [
+            'modules/messaging',
+            'modules/scheduler',
+            'modules/notify-email',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Storage',
+          collapsed: true,
+          items: ['modules/storage-s3'],
+        },
+        {
+          type: 'category',
+          label: 'Operations & Reliability',
+          collapsed: true,
+          items: [
+            'modules/observability',
+            'modules/resilience',
+            'modules/auditing',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Federation & Transport',
+          collapsed: true,
+          items: ['modules/crypto-trust', 'modules/grpc-client'],
+        },
+        {
+          type: 'category',
+          label: 'Tooling',
+          collapsed: true,
+          items: ['modules/dxtest', 'modules/cli'],
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Examples',
+      collapsed: true,
+      link: {type: 'doc', id: 'examples/index'},
+      items: [
+        'examples/standalone',
+        'examples/composition',
+        'examples/service-integration',
+        'examples/testing',
+      ],
+    },
+    'best-practices',
+    {
+      type: 'category',
+      label: 'Migration Guides',
+      collapsed: true,
+      link: {type: 'doc', id: 'migration/index'},
+      items: ['migration/v1'],
+    },
+    {
+      type: 'category',
+      label: 'API Reference',
+      collapsed: true,
+      link: {type: 'doc', id: 'api/index'},
+      items: [],
+    },
+    'faq',
+    'troubleshooting',
+    'release-notes',
+    'contributing',
+  ],
+};
+
+export default sidebars;
