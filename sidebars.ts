@@ -1,137 +1,56 @@
 import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 
-/**
- * dx-common-go is a library of independent modules, so the sidebar is
- * organized around modules rather than a single application architecture:
- * orientation first (intro → getting started → design), then the module
- * catalogue grouped by concern, then cross-cutting guides (examples,
- * best practices, migration, API reference, operations).
- *
- * Every module page is self-contained: purpose, when to use it, key
- * concepts, public API, configuration, examples, pitfalls — a reader
- * should never need an unrelated page to use the module in front of them.
- */
 const sidebars: SidebarsConfig = {
   docsSidebar: [
     'index',
     'getting-started',
-    'design-principles',
-    'package-overview',
+    'architecture',
+    'versions',
     {
       type: 'category',
-      label: 'Modules',
+      label: 'Platform APIs',
       collapsed: false,
-      link: {type: 'doc', id: 'modules/index'},
       items: [
-        {
-          type: 'category',
-          label: 'Service Foundation',
-          collapsed: true,
-          items: [
-            'modules/config',
-            'modules/httpserver',
-            'modules/openapi',
-            'modules/middleware',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'HTTP Contract',
-          collapsed: true,
-          items: [
-            'modules/dxerrors',
-            'modules/response-request',
-            'modules/validation',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Auth & Identity',
-          collapsed: true,
-          items: [
-            'modules/auth-identity',
-            'modules/auth-authorization',
-            'modules/auth-appid',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Persistence',
-          collapsed: true,
-          items: [
-            'modules/postgres',
-            'modules/elasticsearch',
-            'modules/redis-cache',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Messaging & Jobs',
-          collapsed: true,
-          items: [
-            'modules/messaging',
-            'modules/scheduler',
-            'modules/notify-email',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Storage',
-          collapsed: true,
-          items: ['modules/storage-s3'],
-        },
-        {
-          type: 'category',
-          label: 'Operations & Reliability',
-          collapsed: true,
-          items: [
-            'modules/observability',
-            'modules/resilience',
-            'modules/auditing',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Federation & Transport',
-          collapsed: true,
-          items: ['modules/crypto-trust', 'modules/grpc-client'],
-        },
-        {
-          type: 'category',
-          label: 'Tooling',
-          collapsed: true,
-          items: ['modules/dxtest', 'modules/cli'],
-        },
+        'platform/bootstrap-config',
+        'platform/http',
+        'platform/errors-paging',
+        'platform/sql',
+        'platform/cache',
+        'platform/events',
+        'platform/identity',
+        'platform/health-grpc',
       ],
     },
     {
       type: 'category',
-      label: 'Examples',
+      label: 'Foundation packages',
       collapsed: true,
-      link: {type: 'doc', id: 'examples/index'},
       items: [
-        'examples/standalone',
-        'examples/composition',
-        'examples/service-integration',
-        'examples/testing',
+        'foundation/package-catalogue',
+        'foundation/search-storage-security',
+        'foundation/observability-testing',
       ],
     },
-    'best-practices',
     {
       type: 'category',
-      label: 'Migration Guides',
+      label: 'Guides',
       collapsed: true,
-      link: {type: 'doc', id: 'migration/index'},
-      items: ['migration/v1'],
+      items: [
+        'guides/service-integration',
+        'guides/testing',
+        'guides/extension-points',
+        'guides/operations',
+      ],
     },
     {
       type: 'category',
-      label: 'API Reference',
+      label: 'Reference',
       collapsed: true,
-      link: {type: 'doc', id: 'api/index'},
-      items: [],
+      items: [
+        'reference/public-api',
+        'reference/generated-api',
+      ],
     },
-    'faq',
     'troubleshooting',
     'release-notes',
     'contributing',

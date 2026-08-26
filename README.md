@@ -1,31 +1,19 @@
-# dx-common-go-docs
+# dx-common-go documentation
 
-The official developer portal for [dx-common-go](https://github.com/datakaveri/dx-common-go) — the shared Go foundation of the Data Exchange platform.
+Source-backed documentation for the shared Go platform SDK.
 
-Built with Docusaurus: versioned docs, offline search, Mermaid diagrams, light/dark themes.
+## Build
 
-## Develop
+Requires Node.js 20 or newer and a sibling dx-common-go checkout.
 
-```bash
-npm install
-npm start            # live-reload dev server
-npm run build        # production build (broken links fail it)
-npm run serve        # serve the production build
-```
+~~~bash
+DX_COMMON_GO=../dx-common-go bash scripts/gen-api.sh
+npm ci
+npm run typecheck
+npm run build
+npm run start
+~~~
 
-## Structure
+The development URL is http://localhost:3000/dx-common-go-docs/.
 
-- `docs/` — the "Next" (in-development) docs: orientation → module catalogue → examples → guides
-- `versioned_docs/`, `versioned_sidebars/`, `versions.json` — released versions (never edited)
-- `scripts/gen-api.sh` — regenerate `go doc -all` API snapshots from a library checkout (`npm run gen-api`)
-
-## Release a docs version
-
-```bash
-DX_COMMON_GO=…/dx-common-go npm run gen-api
-npm run docusaurus docs:version X.Y.Z
-```
-
-## Deploy
-
-Pushes to `main` build and publish to GitHub Pages via `.github/workflows/deploy.yml` (build on PRs too; deploy only from `main`).
+The site intentionally remains current-only until dx-common-go publishes a real Git tag. Consumers should follow the documented commit or pseudo-version pinning policy.

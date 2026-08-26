@@ -1,70 +1,44 @@
 ---
 id: index
-title: Introduction
+title: dx-common-go
 slug: /
-sidebar_position: 1
+description: Source-backed documentation for the reusable Go platform SDK used by Data Exchange services.
 ---
 
 # dx-common-go
 
-**dx-common-go is the shared Go foundation for every Data Exchange (DX) microservice.** It is a library of independent, reusable modules — configuration, HTTP serving, auth, persistence, messaging, storage, observability, resilience — each solving one cross-cutting concern so that a service imports the packages it needs and writes only domain code.
+dx-common-go is the shared Go SDK for Data Exchange services. It provides stable contracts for service bootstrap, configuration, HTTP behavior, errors, identity, paging, SQL, cache, events, health, and gRPC status mapping, plus foundation packages for search, object storage, messaging, observability, security, testing, and integrations.
 
-```go
-import (
-    "github.com/datakaveri/dx-common-go/config"
-    "github.com/datakaveri/dx-common-go/httpserver"
-    "github.com/datakaveri/dx-common-go/database/postgres/repository"
-    "github.com/datakaveri/dx-common-go/dxerrors"
-)
-```
+## Which API should I use?
 
-## What this library is — and is not
+For new service code, start with platform packages:
 
-| It is | It is not |
+| Concern | Preferred package |
 |---|---|
-| An **application framework** in intent: the library owns infrastructure, services own business logic | A monolithic framework you must adopt wholesale — every module works standalone |
-| **Go-idiomatic in execution**: composition, generics, functional options, explicit APIs | Reflection magic, annotations, or inheritance hierarchies |
-| **Business-free**: keys are opaque, payloads are the caller's, no domain vocabulary | A place for service-specific types, workflows, or contracts |
-| Config-driven: behavior changes through configuration, never forks | Configurable to the point of ambiguity — one supported way per concern |
+| Process lifecycle | platform/bootstrap |
+| Typed configuration | platform/config |
+| HTTP routes and handlers | platform/http |
+| Error taxonomy | platform/errors |
+| Identity in context | platform/security/identity |
+| Pagination | platform/paging |
+| SQL and transactions | platform/database/sql |
+| Cache | platform/cache |
+| Events and outbox | platform/events |
+| Health | platform/observability/health |
+| gRPC status mapping | platform/grpc |
 
-## Who uses it
+Top-level foundation packages remain part of the source tree. Use them where no platform seam exists, or through the explicit adapter package named by the platform API.
 
-All 15+ `dx-*-go` services — the gateway, authz/ACL, catalogue, marketplace, community, files, user, audit, notification, registry, credits, subscription, and the dataplanes — build on these modules. The [`examples/minimal-service`](https://github.com/datakaveri/dx-common-go/tree/main/examples/minimal-service) module is the compiling reference wiring, guarded by CI so it can never rot.
+## Start here
 
-## How to read these docs
+- [Install and verify](getting-started.md)
+- [Architecture and dependency rules](architecture.md)
+- [Build a service](guides/service-integration.md)
+- [Package catalogue](foundation/package-catalogue.md)
+- [Versions and compatibility](versions.md)
 
-- **New to the library?** [Getting Started](/getting-started) walks from `go get` to a running service skeleton.
-- **Evaluating a module?** Every page under [Modules](/modules) is self-contained: purpose, when to use it, key concepts, public API, configuration, examples, pitfalls.
-- **Building a service?** [Design Principles](/design-principles) explains how modules compose, then [Examples → Service Integration](/examples/service-integration) shows the full boot sequence.
-- **Upgrading?** [Migration Guides](/migration) document every breaking change wave with mechanical steps.
+For the complete fleet, trust model, and deployment model, use the [Data Exchange platform documentation](https://datakaveri.github.io/cdpg-docs/). For a guided curriculum, use the [Go learning path](https://datakaveri.github.io/go-learning/).
 
-## The module map at a glance
+## Documentation truth
 
-```mermaid
-flowchart TB
-    subgraph Foundation["Service Foundation"]
-        config --- httpserver --- openapi --- middleware
-    end
-    subgraph Contract["HTTP Contract"]
-        dxerrors --- respreq["response / request"] --- validation
-    end
-    subgraph Auth["Auth & Identity"]
-        jwt["auth/jwt"] --- resolver["auth/resolver + headers"] --- fga["auth/fga"] --- appid["auth/appid"]
-    end
-    subgraph Data["Persistence"]
-        pg["database/postgres/*"] --- es["database/elasticsearch/*"] --- redis["cache + database/redis"]
-    end
-    subgraph Async["Messaging & Jobs"]
-        rmq["messaging/rabbitmq"] --- outbox["messaging/outbox"] --- sched["scheduler"]
-    end
-    subgraph Ops["Operations"]
-        obs["observability"] --- health --- metrics --- resilience --- auditing
-    end
-    Foundation --> Contract
-    Contract --> Auth
-    Auth --> Data
-    Data --> Async
-    Async --> Ops
-```
-
-Each edge above is a *typical composition order at boot*, not a dependency: modules do not depend on each other beyond a small set of leaf utilities, and any module can be used alone. See [Package Overview](/package-overview) for the real dependency rules.
+These pages were reviewed against the public Go source and service call sites. There are currently no published repository tags; the docs therefore describe the current source line and do not claim a released semantic version. See [Versions and compatibility](versions.md).

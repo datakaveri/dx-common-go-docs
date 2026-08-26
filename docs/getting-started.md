@@ -1,143 +1,76 @@
 ---
-id: getting-started
 title: Getting Started
-sidebar_position: 2
+description: Add dx-common-go, choose the right package, and verify a service integration.
 ---
 
-# Getting Started
+# Getting started
 
-This page takes you from zero to a running service skeleton built on dx-common-go.
+## Requirements
 
-## Prerequisites
+- Go 1.25 or newer
+- a Go module for your service
+- only the infrastructure used by the adapters you choose
 
-- **Go 1.25+** (the library pins its toolchain in `go.mod`)
-- **Docker** — only for integration tests and local infrastructure; the library itself has no runtime Docker dependency
+## Add the module
 
-## Installation
+Until a tagged release is published, pin an approved commit or Go pseudo-version:
 
-Inside the DX workspace, services consume the library through a `replace` directive pointing at the sibling checkout — one atomic version across the fleet:
+~~~bash
+go get github.com/datakaveri/dx-common-go@<approved-commit>
+go mod tidy
+go test ./...
+~~~
 
-```go title="go.mod"
-require github.com/datakaveri/dx-common-go v0.0.0
+Do not use an unreviewed moving branch in a release build. Record the exact module version in go.mod and deployment evidence.
 
-replace github.com/datakaveri/dx-common-go => ../dx-common-go
-```
+For a workspace checkout, Go workspaces are preferable to a committed replace directive:
 
-Standalone consumers use a normal module require:
+~~~bash
+go work init ./dx-common-go ./dx-example-go
+go work sync
+~~~
 
-```bash
-go get github.com/datakaveri/dx-common-go@latest
-```
+## Minimal platform package
 
-## Your first service in ~60 lines
+Platform errors and paging have no infrastructure dependency:
 
-The essential wiring: config → server → one route, with the platform's envelope and error taxonomy.
-
-```go title="cmd/server/main.go"
-package main
+~~~go
+package widgets
 
 import (
-	"context"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
+    "context"
+    "fmt"
 
-	"github.com/go-chi/chi/v5"
-	"go.uber.org/zap"
-
-	"github.com/datakaveri/dx-common-go/config"
-	"github.com/datakaveri/dx-common-go/dxerrors"
-	"github.com/datakaveri/dx-common-go/health"
-	"github.com/datakaveri/dx-common-go/httpserver"
-	"github.com/datakaveri/dx-common-go/middleware"
-	"github.com/datakaveri/dx-common-go/response"
+    platformerrors "github.com/datakaveri/dx-common-go/platform/errors"
+    "github.com/datakaveri/dx-common-go/platform/paging"
 )
 
-type Config struct {
-	LogLevel string            `mapstructure:"log_level"`
-	Server   httpserver.Config `mapstructure:"server"`
+type Service struct{}
+
+func (Service) List(
+    _ context.Context,
+    req paging.Request,
+) (paging.Page[string], error) {
+    return paging.NewPage([]string{"one"}, req, 1), nil
 }
 
-func main() {
-	logger, _ := zap.NewProduction()
-	defer logger.Sync()
-
-	cfg, err := config.LoadService[Config](config.ServiceOptions{
-		Defaults: map[string]any{"server.port": 8080},
-	})
-	if err != nil {
-		logger.Fatal("config", zap.Error(err))
-	}
-
-	// One signal context stops every component together.
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	sw := response.NewServiceWriter("urn:dx:demo:")
-
-	r := chi.NewRouter()
-	middleware.Standard(logger, 15e9)(r) // RequestID → RealIP → Logger → CORS → Compression → Recoverer → Timeout
-
-	hh := health.NewHandler()
-	r.Get("/healthz/live", hh.Live)
-	r.Get("/healthz/ready", hh.Ready)
-
-	r.Get("/hello", func(w http.ResponseWriter, req *http.Request) {
-		name := req.URL.Query().Get("name")
-		if name == "" {
-			dxerrors.WriteError(w, dxerrors.NewValidation("name is required"))
-			return
-		}
-		sw.Success(w, map[string]string{"greeting": "hello " + name}, "Success", "greeted")
-	})
-
-	if err := httpserver.New(cfg.Server, r, logger).Run(ctx); err != nil {
-		logger.Fatal("server", zap.Error(err))
-	}
+func (Service) Get(_ context.Context, id string) (string, error) {
+    if id == "" {
+        return "", platformerrors.Validation("id is required")
+    }
+    return "", fmt.Errorf(
+        "load widget %q: %w",
+        id,
+        platformerrors.NotFound("widget not found"),
+    )
 }
-```
+~~~
 
-Run it:
+## Selection rule
 
-```bash
-go run ./cmd/server
-curl 'localhost:8080/hello?name=dx'
-# {"type":"urn:dx:demo:success","title":"Success","detail":"greeted","result":{"greeting":"hello dx"}}
-curl 'localhost:8080/hello'
-# {"type":"urn:dx:as:InvalidParamValue","title":"Bad Request","detail":"name is required"}
-```
+1. Use a platform package when it covers the concern.
+2. Use its named adapter package for a vendor implementation, such as platform/database/sql/pgx, platform/cache/redis, or platform/events/amqp.
+3. Use a top-level foundation package only when the platform surface does not cover that capability.
+4. Keep vendor clients at the composition or adapter boundary.
 
-You already have: structured request logging, request IDs, panic recovery, CORS, compression, timeouts, liveness/readiness probes, graceful shutdown on SIGTERM, and the platform's response envelope + error taxonomy.
-
-## The full reference wiring
-
-For everything else — Postgres pool with tracing, migrations, repositories, transactional outbox, scheduler, OpenTelemetry, OpenAPI validation, auth — copy the compiling template:
-
-```bash
-git clone https://github.com/datakaveri/dx-common-go
-cd dx-common-go/examples/minimal-service
-go run .
-```
-
-It demonstrates the canonical boot order:
-
-```mermaid
-flowchart LR
-    A[config.LoadService] --> B[observability.Init]
-    B --> C[migrate.Run]
-    C --> D["client.NewPool(ctx, …)"]
-    D --> E[repositories]
-    E --> F[outbox + scheduler]
-    F --> G["middleware.Standard(WithTracing)"]
-    G --> H[health checkers]
-    H --> I["httpserver.Run(ctx)"]
-```
-
-CI compiles this template on every commit, so it is always in sync with the library's current API.
-
-## Where next
-
-- [Design Principles](/design-principles) — how the modules are meant to compose
-- [Modules](/modules) — the catalogue; every page stands alone
-- [Examples](/examples) — standalone usage through full service integration
+Next: [Build a complete service](guides/service-integration.md).

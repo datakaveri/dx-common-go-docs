@@ -1,51 +1,40 @@
 ---
-id: troubleshooting
 title: Troubleshooting
-sidebar_position: 10
+description: Diagnose module pins, configuration, binding, SQL, cache, events, and shutdown.
 ---
 
 # Troubleshooting
 
-### `config.LoadService: reading config file: …` at boot
+## Service uses an unexpected API
 
-Your config file exists but doesn't parse. This is intentional (previously the service silently booted on defaults). Fix the YAML; a *missing* file is still fine.
+~~~bash
+go list -m github.com/datakaveri/dx-common-go
+go mod graph | grep dx-common-go
+go env GOWORK
+~~~
 
-### `resolver: at least one of Headers.Secret or AllowDirect must be set`
+Check for a workspace or replace directive overriding go.mod. Record the actual pseudo-version, not the branch you expected.
 
-Both identity paths are disabled. Set the HMAC secret (behind the gateway) or `AllowDirect: true` + JWT config (direct mode).
+## Environment value is ignored
 
-### `jwt: enabled=false is not allowed when DX_ENV=production`
+Use the unprefixed nested key with underscores, confirm the field exists in typed config, and add a default or file key when diagnosing. Load binds known keys, validates after unmarshal, and reports malformed files.
 
-The dev-mode synthetic user is blocked in production-like environments by design. Enable real validation or fix `DX_ENV`.
+## Handler returns 401 before running
 
-### 401 `invalid subject signature` on gateway traffic
+Handle requires an authenticated actor unless the request and route use the optional contract. Confirm the request embeds the correct Actor type, the route is marked Optional when intended, and authentication middleware stores identity.Subject.
 
-Secret mismatch or clock skew beyond the replay window (MaxAge 60s + skew). Check both sides' secrets (and `PreviousSecrets` during rotation) and NTP.
+## Query ignores the transaction
 
-### Requests 400 with `request validation failed`
+Pass the callback context from Manager.Do to every repository call. For raw or sqlc access, obtain the querier with sql.Conn(txCtx, db). A background context starts outside the transaction.
 
-The OpenAPI middleware rejected the request; the `errors` array names the field. If the route shouldn't validate, it's missing from your spec (spec-absent routes pass through).
+## Cache continuously misses
 
-### Consumer keeps redelivering the same message
+Check service prefix, namespace, key, TTL, serialization shape, and which Redis database or endpoint the process uses. Decode failure intentionally deletes the corrupt value and behaves as ErrMiss.
 
-Your handler returns `Requeue` for a permanent failure. Poison messages must return `DeadLetter` (they land on `<queue>.dlq`, preserved). Set `MaxAttempts` as a backstop.
+## Event retries forever
 
-### `resilience: circuit breaker is open`
+Classify transient and permanent failures. Return ErrDrop only for work that can never succeed and make that drop observable. Inspect version, consumer group, retry, and dead-letter topology before replay.
 
-The upstream crossed its failure threshold; calls fail fast during cooldown. This is the feature. Fix the upstream; tune `WithFailureThreshold`/`WithCooldown` if it trips too eagerly.
+## Process hangs during shutdown
 
-### Integration tests skip with "provider not healthy"
-
-Docker isn't running. That's the designed behavior (`go test ./...` stays green); start Docker or export the `DX_TEST_*` env DSNs to bind existing instances.
-
-### Migration fails with a dirty-state error
-
-A previous migration failed partway; golang-migrate refuses to continue. Fix the schema by hand, then `migrate force <version>` (one-off with the same config) before restarting. The loud failure is intentional.
-
-### Graceful shutdown hangs ~10s
-
-Some in-flight request (or a handler ignoring `r.Context()`) is holding the drain until `ShutdownTimeout`. Propagate contexts in handlers; tune the timeout to your slowest legitimate request.
-
-### Traces missing for RabbitMQ consumers
-
-The publisher stamped no trace context — almost always a `PublishJSON` called with a background context. Pass the request ctx.
+Every worker and network call must observe the supplied context. Closers should use their shutdown context and have bounded time. Do not start unmanaged goroutines from constructors.
