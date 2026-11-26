@@ -7,7 +7,7 @@ description: Keep a growing Wire function readable — one ordered build list, o
 
 The composition root is the one place where a service assembles itself: `cmd/server`, the code behind `Spec.Wire` and `Spec.GRPC`. [Bootstrap](../platform/bootstrap-config.md) owns the *order* of start-up and shutdown. This guide is about the code *inside* `Wire` once a service has more than two or three dependencies.
 
-Worked example: `dx-user-go/cmd/server` on branch [`refactor/main-boot-cycle`](https://github.com/datakaveri/dx-user-go/tree/refactor/main-boot-cycle/cmd/server), commit `8061f89`. **Status: in development** — tested, not yet merged to `dev`.
+Worked example: [`dx-user-go/cmd/server`](https://github.com/datakaveri/dx-user-go/tree/dev/cmd/server) on `dev`, merged in [PR #24](https://github.com/datakaveri/dx-user-go/pull/24) (merge commit `207ce6e`). **Status: implemented on `dev`**; not yet released to `main` or deployed.
 
 ## The problem
 
