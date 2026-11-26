@@ -38,3 +38,26 @@ Classify transient and permanent failures. Return ErrDrop only for work that can
 ## Process hangs during shutdown
 
 Every worker and network call must observe the supplied context. Closers should use their shutdown context and have bounded time. Do not start unmanaged goroutines from constructors.
+
+## Disabled dependency behaves as enabled, or panics on first use
+
+A constructor returned a typed nil pointer through an interface: for example, a nil `*credits.Client` as a `service.CreditProvisioner`, or a nil `*grpcserver.Server` as a `bootstrap.Servable`. The interface is then non-nil, so `if x != nil` takes the "on" branch.
+
+Fix: return the interface type itself, and return a bare `nil` when the dependency is off. See rule 3 in [Structure a composition root](guides/composition-root.md#rules).
+
+## Service rejects a credential that is correct in the env file
+
+When a local run loads an env file with shell `source` or `. file`, a value containing `$` inside double quotes is expanded as a variable. A password such as `"ab$cd"` arrives shortened, and the dependency rejects it.
+
+Two signs point to this:
+
+- the service's own error names an authentication failure;
+- the value works when typed directly.
+
+Load env files literally: use a dotenv loader, or `docker run --env-file`, which does not expand values.
+
+## Whole service becomes unready when an optional dependency is down
+
+`App.Probe` registers a **critical** readiness check, so one failing check turns `/healthz/ready` into 503 and removes every replica from traffic.
+
+For a dependency the service degrades around, register the check with `app.Health.AddOptional`. It is still reported, but it no longer decides readiness.

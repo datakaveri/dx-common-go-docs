@@ -37,6 +37,7 @@ const sidebars: SidebarsConfig = {
       collapsed: true,
       items: [
         'guides/service-integration',
+        'guides/composition-root',
         'guides/testing',
         'guides/extension-points',
         'guides/operations',
